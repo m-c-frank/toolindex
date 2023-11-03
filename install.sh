@@ -56,14 +56,16 @@ detect_shell_config() {
 
 SHELL_CONFIG_FILE=$(detect_shell_config)
 
-# Check if the configuration file exists
 if [ ! -f "$SHELL_CONFIG_FILE" ]; then
-    read -e -p "The detected shell configuration file ($SHELL_CONFIG_FILE) does not exist. Please provide the path to your actual shell configuration file: " SHELL_CONFIG_FILE
+    read -e -p "The detected shell configuration file ($SHELL_CONFIG_FILE) does not exist. Please provide the path to your actual shell configuration file: " input
+    # Expand the tilde to the home directory path
+    SHELL_CONFIG_FILE="${input/#\~/$HOME}"
 fi
 
 # Update the PATH in the user's shell configuration file if needed
 if ! grep -Fxq "export PATH=\"$INSTALL_DIR:\$PATH\"" "$SHELL_CONFIG_FILE"; then
-    echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$SHELL_CONFIG_FILE"
+    # Correctly expand the tilde before appending
+    echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "${SHELL_CONFIG_FILE/#\~/$HOME}"
     echo "Updated PATH in $SHELL_CONFIG_FILE"
 fi
 
