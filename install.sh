@@ -2,7 +2,8 @@
 
 INSTALL_DIR="$HOME/bin"
 REPO_URL="https://github.com/m-c-frank/toolindex.git"
-REPO_DIR="$HOME/.toolindex"
+# Get the current directory, which is where the script is being run from
+REPO_DIR=$(pwd)
 
 # Function to install a package using pacman
 install_package() {
@@ -18,33 +19,52 @@ install_package() {
     fi
 }
 
-# Check if git is installed, if not, offer to install
+# Check for required tools and install if necessary
 command -v git &> /dev/null || install_package git
-
-# Check if GitHub CLI is installed, if not, offer to install
-if ! command -v gh &> /dev/null; then
-    install_package gh
-    # Authenticate with GitHub after installation
-    gh auth login
-fi
+command -v gh &> /dev/null || { install_package gh && gh auth login; }
 
 # Clone the repository and install the scripts
-git clone "$REPO_URL" "$REPO_DIR" || {
+git clone "$REPO_URL" "$REPO_DIR" --depth 1 || {
     echo "Failed to clone the toolindex repository."
     exit 1
 }
 
 mkdir -p "$INSTALL_DIR"
 cp "$REPO_DIR/bin/toolindex.sh" "$INSTALL_DIR/toolindex"
-cp "$REPO_DIR/src/fetch_abstracts.sh" "$INSTALL_DIR/"
-cp "$REPO_DIR/src/format_abstracts.sh" "$INSTALL_DIR/"
+chmod +x "$INSTALL_DIR/toolindex"
 
-chmod +x "$INSTALL_DIR"/toolindex "$INSTALL_DIR"/fetch_abstracts.sh "$INSTALL_DIR"/format_abstracts.sh
+# Detect the user's shell configuration file
+detect_shell_config() {
+    local shell_config="$HOME/.bashrc"  # default to .bashrc
 
-# Check if the install directory is in the PATH, add it if not
-if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
-    echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$HOME/.bashrc"
-    echo "Added $INSTALL_DIR to PATH"
+    case $SHELL in
+        */zsh)
+            shell_config="$HOME/.zshrc"
+            ;;
+        */bash)
+            # Check for .bash_profile in case of a login shell on macOS or other systems
+            [ -f "$HOME/.bash_profile" ] && shell_config="$HOME/.bash_profile" || shell_config="$HOME/.bashrc"
+            ;;
+        *)
+            # Check for .profile if the shell is not bash or zsh
+            shell_config="$HOME/.profile"
+            ;;
+    esac
+
+    echo "$shell_config"
+}
+
+SHELL_CONFIG_FILE=$(detect_shell_config)
+
+# Check if the configuration file exists
+if [ ! -f "$SHELL_CONFIG_FILE" ]; then
+    read -e -p "The detected shell configuration file ($SHELL_CONFIG_FILE) does not exist. Please provide the path to your actual shell configuration file: " SHELL_CONFIG_FILE
 fi
 
-echo "Installation complete. Please restart your terminal or source your .bashrc file."
+# Update the PATH in the user's shell configuration file if needed
+if ! grep -Fxq "export PATH=\"$INSTALL_DIR:\$PATH\"" "$SHELL_CONFIG_FILE"; then
+    echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$SHELL_CONFIG_FILE"
+    echo "Updated PATH in $SHELL_CONFIG_FILE"
+fi
+
+echo "Installation complete. Please restart your terminal or re-source your shell configuration."

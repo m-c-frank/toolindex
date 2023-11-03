@@ -7,7 +7,9 @@ A CLI tool that lists GitHub projects with their `ABSTRACT.md` contents.
 To install `toolindex`, run the following command:
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/m-c-frank/toolindex/main/install.sh)
+git clone https://github.com/m-c-frank/toolindex.git
+cd toolindex
+bash install.sh
 ```
 
 This script will:
@@ -17,10 +19,6 @@ This script will:
 - add the directory to your `PATH` if it's not already included.
 
 After installation, restart your terminal or run:
-
-```bash
-source ~/.bashrc
-```
 
 ## Usage
 
