@@ -27,12 +27,13 @@ fi
 {
     printf "%-40s | %-60s\n" "PROJECT" "ABSTRACT"
     printf "%-40s | %-60s\n" "-------" "--------"
-    gh repo list --limit "$LIMIT" --json nameWithOwner,description | jq -c '.[]' | while read -r repo; do
+    gh repo list --limit "$LIMIT" --json nameWithOwner | jq -c '.[]' | while read -r repo; do
         REPO_NAME=$(echo "$repo" | jq -r '.nameWithOwner')
-        ABSTRACT_CONTENT=$(gh api repos/"$REPO_NAME"/contents/ABSTRACT.md --jq '.content' | base64 --decode 2> /dev/null)
-
-        if [[ -z "$ABSTRACT_CONTENT" ]]; then
-            ABSTRACT_CONTENT="No ABSTRACT.md found."
+        # Check if ABSTRACT.md exists in the repository
+        if gh api repos/"$REPO_NAME"/contents/ABSTRACT.md --jq '.content' &> /dev/null; then
+            ABSTRACT_CONTENT=$(gh api repos/"$REPO_NAME"/contents/ABSTRACT.md --jq '.content' | base64 --decode)
+        else
+            ABSTRACT_CONTENT="ABSTRACT.md does not exist"
         fi
 
         # Use printf to ensure proper alignment and trimming of content
