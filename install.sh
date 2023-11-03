@@ -3,7 +3,7 @@
 INSTALL_DIR="$HOME/bin"
 REPO_URL="https://github.com/m-c-frank/toolindex.git"
 # Get the current directory, which is where the script is being run from
-REPO_DIR=$(pwd)
+REPO_DIR="./toolindex/"
 
 # Function to install a package using pacman
 install_package() {
