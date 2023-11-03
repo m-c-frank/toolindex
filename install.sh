@@ -40,15 +40,25 @@ detect_shell_config() {
 
     case $SHELL in
         */zsh)
-            shell_config="$HOME/.zshrc"
+            if [ -f "$HOME/.zshrc" ]; then
+                shell_config="$HOME/.zshrc"
+            elif [ -f "$HOME/.config/zsh/.zshrc" ]; then
+                shell_config="$HOME/.config/zsh/.zshrc"
+            fi
             ;;
         */bash)
             # Check for .bash_profile in case of a login shell on macOS or other systems
-            [ -f "$HOME/.bash_profile" ] && shell_config="$HOME/.bash_profile" || shell_config="$HOME/.bashrc"
+            if [ -f "$HOME/.bash_profile" ]; then
+                shell_config="$HOME/.bash_profile"
+            else
+                shell_config="$HOME/.bashrc"
+            fi
             ;;
         *)
             # Check for .profile if the shell is not bash or zsh
-            shell_config="$HOME/.profile"
+            if [ -f "$HOME/.profile" ]; then
+                shell_config="$HOME/.profile"
+            fi
             ;;
     esac
 
