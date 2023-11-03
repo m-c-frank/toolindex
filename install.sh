@@ -30,7 +30,7 @@ git clone "$REPO_URL" "$REPO_DIR" --depth 1 || {
 }
 
 mkdir -p "$INSTALL_DIR"
-cp "$REPO_DIR/bin/toolindex.sh" "$INSTALL_DIR/toolindex"
+cp "$REPO_DIR/bin/toolindex" "$INSTALL_DIR/toolindex"
 chmod +x "$INSTALL_DIR/toolindex"
 
 # Detect the user's shell configuration file
