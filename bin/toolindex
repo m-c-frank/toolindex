@@ -1,42 +1,45 @@
 #!/bin/bash
 # ---
 # Lists projects and their abstracts for the authenticated GitHub user.
-# Usage: ./toolindex.sh [-l limit]
+# Usage: ./bin/toolindex.sh [-l limit] [-r]
 # Options:
 #   -l limit: Number of projects to list (default 10)
+#   -r: Output in human-readable format (default is CSV)
 # ---
 
-# Default limit
+# Default settings
 LIMIT=10
+HUMAN_READABLE=false
+
+# Determine the directory where the script is located
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 # Parse command line options
-while getopts "l:" opt; do
+while getopts "l:rh" opt; do
   case $opt in
     l) LIMIT=${OPTARG} ;;
+    r) HUMAN_READABLE=true ;;
+    h) echo "Usage: ./bin/toolindex.sh [-l limit] [-r]"
+       echo "  -l limit: Number of projects to list (default 10)"
+       echo "  -r: Output in human-readable format (default is CSV)"
+       exit 0 ;;
     \?) echo "Invalid option -$OPTARG" >&2; exit 1 ;;
   esac
 done
 
-# Check if GitHub CLI is authenticated
-if ! gh auth status &> /dev/null; then
-    echo "GitHub CLI not authenticated. Please login with 'gh auth login'."
-    exit 1
+# Source the helper scripts from the src directory
+
+# Source the helper scripts from the src directory
+FETCH_ABSTRACTS_SCRIPT="$DIR/src/fetch_abstracts.sh"
+FORMAT_ABSTRACTS_SCRIPT="$DIR/src/format_abstracts.sh"
+
+# Ensure the helper scripts are executable
+chmod +x "$FETCH_ABSTRACTS_SCRIPT"
+chmod +x "$FORMAT_ABSTRACTS_SCRIPT"
+
+# Fetch abstracts and optionally format for human-readable output
+if [ "$HUMAN_READABLE" = true ]; then
+    bash "$FETCH_ABSTRACTS_SCRIPT" -l "$LIMIT" | bash "$FORMAT_ABSTRACTS_SCRIPT"
+else
+    bash "$FETCH_ABSTRACTS_SCRIPT" -l "$LIMIT"
 fi
-
-# Fetch and display repos with ABSTRACT.md
-{
-    printf "%-40s | %-60s\n" "PROJECT" "ABSTRACT"
-    printf "%-40s | %-60s\n" "-------" "--------"
-    gh repo list --limit "$LIMIT" --json nameWithOwner | jq -c '.[]' | while read -r repo; do
-        REPO_NAME=$(echo "$repo" | jq -r '.nameWithOwner')
-        # Check if ABSTRACT.md exists in the repository
-        if gh api repos/"$REPO_NAME"/contents/ABSTRACT.md --jq '.content' &> /dev/null; then
-            ABSTRACT_CONTENT=$(gh api repos/"$REPO_NAME"/contents/ABSTRACT.md --jq '.content' | base64 --decode)
-        else
-            ABSTRACT_CONTENT="ABSTRACT.md does not exist"
-        fi
-
-        # Use printf to ensure proper alignment and trimming of content
-        printf "%-40s | %-60s\n" "$REPO_NAME" "$ABSTRACT_CONTENT"
-    done | column -t -s '|'
-}
